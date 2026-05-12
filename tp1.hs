@@ -65,3 +65,15 @@ fromList lp = auxFromList lp 0 (dimension (head lp))
 
 
 ---------------------------- EJERCICIO 3 ---------------------------------
+
+insertar :: Punto p => p -> NdTree p -> NdTree p
+insertar x Empty = Node Empty x Empty 0 
+insertar x (Node izq p der k)
+  | coord k x < coord k p = Node (insertar' x izq ((k+1) `mod` dimension p)) p der k
+  | otherwise              = Node izq p (insertar' x der ((k+1) `mod` dimension p)) k
+
+insertar' :: Punto p => p -> NdTree p -> Int -> NdTree p
+insertar' x Empty k      = Node Empty x Empty k
+insertar' x (Node izq p der k) _ 
+  | coord k x < coord k p = Node (insertar' x izq ((k+1) `mod` dimension p)) p der k
+  | otherwise              = Node izq p (insertar' x der ((k+1) `mod` dimension p)) k
