@@ -1,50 +1,67 @@
+
+import Data.List (sortBy)
+import Data.Ord (comparing)
+
+
+data NdTree p = 
+  Node 
+  (NdTree p) -- sub´arbol izquierdo
+  p -- punto
+  (NdTree p) -- sub´arbol derecho
+  Int -- eje
+  | Empty
+  deriving (Eq, Ord, Show)
+
 class Punto p 
   where
     dimension :: p -> Int -- devuelve el n´umero de coordenadas de un punto
     coord :: Int -> p -> Double -- devuelve la coordenada k-´esima de un punto (comenzando de 0)
     dist :: p -> p -> Double -- calcula la distancia entre dos puntos
-    dist p1 p2 = sqrt (sum [((coord i p1) - (coord i p2)) | i <- [0..(dimension p1) - 1]])
-    
+    dist p1 p2 = sqrt (sum [((coord i p1) - (coord i p2))^2 | i <- [0..(dimension p1) - 1]])
 
-newType Punto2d = P2d (Double, Double)
-newType Punto3d = P3d (Double, Double, Double)
+
+newtype Punto2d = P2d (Double, Double)
+newtype Punto3d = P3d (Double, Double, Double)
 
 instance Punto Punto2d where
     dimension _ = 2
-
     coord 0 (P2d (x, _)) = x
     coord 1 (P2d (_, y)) = y
 
-    dist (P2d (x1, y1)) (P2d (x2, y2)) = sqrt ((x1 - x2) ^ 2 + (y1 - y2) ^ 2)
-
 instance Punto Punto3d where
     dimension _ = 3
-
     coord 0 (P3d (x, y, z)) = x
     coord 1 (P3d (x, y, z)) = y
-    coord 2 (P3d (x, y, z)) = z
-    
-    dist (P3d (x1, y1, z1)) (P3d (x2, y2, z2)) = sqrt ((x1 - x2) ^ 2 + (y1 - y2) ^ 2 + (z1 - z2) ^ 2)
+    coord 2 (P3d (x, y, z)) = z 
 
--- ej2
+---------------------------- EJERCICIO 2 ---------------------------------
 
-auxFromList :: Punto p => [p] -> Int -> NdTree p
-auxFromList [] = Empty
-auxFromList lp = t1
+auxFromList :: Punto p => [p] -> Int ->Int -> NdTree p
+auxFromList [] _ _ = Empty
+auxFromList lp k n= let (menores, mediana, mayores) = partir (ordenarPorCoord k lp); lvl_sig = ((k+1) `mod` n) 
+                    in (Node 
+                    (auxFromList menores lvl_sig n) 
+                    mediana 
+                    (auxFromList mayores lvl_sig n)
+                    k)
 
-listMedian :: Punto p => [p] -> Int -> (p, [p], [p])
-listMedian 
+ordenarPorCoord :: Punto p => Int -> [p] -> [p]
+ordenarPorCoord k ps = sortBy (comparing (coord k)) ps
 
-qsortList :: Punto p => [p] -> Int -> [p]
-qsortList [] _          = Empty
-qsortList l@(x : []) _  = x
-qsortList (x : xs) k    = (qsortList izq) ++ [x] ++ (qsortList der) 
-    where
-        izq = filter (\a -> (coord k x) >= (coord k a)) xs
-        der = filter (\a -> (coord k x) <  (coord k a)) xs
+partir :: Punto p => [p] -> ([p], p, [p])
+partir ps = (menores, mediana, mayores)
+  where
+    n                = length ps
+    mitad            = n `div` 2
+    (menores, resto) = splitAt mitad ps
+    mediana          = head resto
+    mayores          = tail resto
+
 
 
 fromList :: Punto p => [p] -> NdTree p
 fromList [] = Empty
-fromList lp = auxFromList lp 0
+fromList lp = auxFromList lp 0 (dimension (head lp))
 
+
+---------------------------- EJERCICIO 3 ---------------------------------
