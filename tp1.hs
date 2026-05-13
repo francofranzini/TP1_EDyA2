@@ -83,7 +83,7 @@ insertar' x (Node izq p der k) _
 
 buscarKMenor :: Punto p => Int -> NdTree p -> Maybe p
 buscarKMenor _ Empty = Nothing
-buscarKMenor k (Node izq x der i) = if k == i then buscarKMenor k izq else aux minIzq x minDer
+buscarKMenor k (Node izq x der i) = if k == i then aux (buscarKMenor k izq) x Nothing else aux minIzq x minDer
     where
         minIzq = buscarKMenor k izq
         minDer = buscarKMenor k der
@@ -95,14 +95,14 @@ buscarKMenor k (Node izq x der i) = if k == i then buscarKMenor k izq else aux m
 
 buscarKMayor :: Punto p => Int -> NdTree p -> Maybe p
 buscarKMayor _ Empty = Nothing
-buscarKMayor k (Node izq x der i) = if k == i then buscarKMayor k der else aux maxIzq x maxDer
+buscarKMayor k (Node izq x der i) = if k == i then aux Nothing x (buscarKMayor k der) else aux maxIzq x maxDer
     where
         maxIzq = buscarKMayor k izq
         maxDer = buscarKMayor k der
         aux Nothing x Nothing   = Just x
-        aux Nothing x (Just x)  = Just (maxCoord k x y)
+        aux Nothing x (Just y)  = Just (maxCoord k x y)
         aux (Just x) y Nothing  = Just (maxCoord k x y)
-        aux (Just x) y (Just z) = Just (maxcoord k x (maxcoord k z))
+        aux (Just x) y (Just z) = Just (maxCoord k x (maxCoord k y z))
         maxCoord k x y = if (coord k x) > (coord k y) then x else y
 
 compP :: Punto p => p -> p -> Int -> Bool
@@ -112,17 +112,27 @@ eliminar :: Punto p => p -> NdTree p -> NdTree p
 eliminar p Empty = Empty
 eliminar p t@(Node Empty x Empty k) = if p == x then Empty else t
 
-eliminar p t@(Node Empty x der   k) | p == x      = (Node Empty val (eliminar val der) k) 
-                                        where Just val = buscarKMenor k der
+eliminar p t@(Node Empty x der   k) | p == x      = (Node Empty minimo_der (eliminar minimo_der der) k) 
                                     | compP p x k = t
                                     | otherwise   = (Node Empty x (eliminar p der) k)
+                                    where Just minimo_der = buscarKMenor k der
 
-eliminar p t@(Node izq x Empty   k) | p == x      = (Node (eliminar val izq) val Empty k)
-                                        where Just val = buscarKMayor k izq
+eliminar p t@(Node izq x Empty   k) | p == x      = (Node (eliminar maximo_izq izq) maximo_izq Empty k)
                                     | compP p x k = (Node (eliminar p izq) x Empty k)
                                     | otherwise   = t
+                                    where Just maximo_izq = buscarKMayor k izq
 
-eliminar p t@(Node izq x der k)     | p == x      = (Node izq val (eliminar val der) k)
-                                        where Just val = buscarKMenor k der
+eliminar p t@(Node izq x der k)     | p == x      = (Node izq minimo_der (eliminar minimo_der der) k)
                                     | compP p x k = (Node (eliminar p izq) x der k) 
                                     | otherwise   = (Node izq x (eliminar p der) k)
+                                    where Just minimo_der = buscarKMenor k der
+
+---------------------------- EJERCICIO 5 ---------------------------------
+type Rect = (Punto2d, Punto2d)
+inRegion :: Punto2d -> Rect -> Bool
+inRegion (x1, x2) (p1, p2) = let min_x = (min (coord 0 p1) (coord 0 p2))
+                                 max_x = (max (coord 0 p1) (coord 0 p2))
+                                 min_y = (min (coord 1 p1) (coord 1 p2))
+                                 max_y = (max (coord 1 p1) (coord 1 p2))
+                              in (x1 >= min_x) && (x1 <= max_x) && (x2 >= min_y) && (x2 <= max_y)
+                            
