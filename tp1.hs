@@ -20,8 +20,8 @@ class Punto p
     dist p1 p2 = sqrt (sum [((coord i p1) - (coord i p2))^2 | i <- [0..(dimension p1) - 1]])
 
 
-newtype Punto2d = P2d (Double, Double)
-newtype Punto3d = P3d (Double, Double, Double)
+newtype Punto2d = P2d (Double, Double) deriving Show
+newtype Punto3d = P3d (Double, Double, Double) deriving Show
 
 instance Punto Punto2d where
     dimension _ = 2
