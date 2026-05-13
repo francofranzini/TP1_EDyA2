@@ -108,7 +108,7 @@ buscarKMayor k (Node izq x der i) = if k == i then aux Nothing x (buscarKMayor k
 compP :: Punto p => p -> p -> Int -> Bool
 compP x y k = (coord k x) < (coord k y)
 
-eliminar :: Punto p => p -> NdTree p -> NdTree p
+eliminar :: (Eq p, Punto p) => p -> NdTree p -> NdTree p
 eliminar p Empty = Empty
 eliminar p t@(Node Empty x Empty k) = if p == x then Empty else t
 
@@ -130,9 +130,28 @@ eliminar p t@(Node izq x der k)     | p == x      = (Node izq minimo_der (elimin
 ---------------------------- EJERCICIO 5 ---------------------------------
 type Rect = (Punto2d, Punto2d)
 inRegion :: Punto2d -> Rect -> Bool
-inRegion (x1, x2) (p1, p2) = let min_x = (min (coord 0 p1) (coord 0 p2))
-                                 max_x = (max (coord 0 p1) (coord 0 p2))
-                                 min_y = (min (coord 1 p1) (coord 1 p2))
-                                 max_y = (max (coord 1 p1) (coord 1 p2))
-                              in (x1 >= min_x) && (x1 <= max_x) && (x2 >= min_y) && (x2 <= max_y)
+inRegion (P2d (x1, x2)) (p1, p2) = 
+  let min_x = (min (coord 0 p1) (coord 0 p2))
+      max_x = (max (coord 0 p1) (coord 0 p2))
+      min_y = (min (coord 1 p1) (coord 1 p2))
+      max_y = (max (coord 1 p1) (coord 1 p2))
+  in (x1 >= min_x) && (x1 <= max_x) && (x2 >= min_y) && (x2 <= max_y)
+
+ortogonalSearch :: NdTree Punto2d -> Rect -> [Punto2d]
+ortogonalSearch tree rect = aux tree []
+  where
+    (min_x, max_x, min_y, max_y) = limites rect
+
+    limites (P2d(x1,y1), P2d(x2,y2)) = ((min x1 x2), (max x1 x2), (min y1 y2), (max y1 y2))
+
+    aux Empty xs = xs
+    aux (Node l x r k) xs = 
+      if inRegion x rect 
+      then (aux l (aux r (x:xs)))
+      else if (k == 0) && ((coord 0 x) > max_x) then (aux l xs) --Se va por derecha
+      else if (k == 0) && ((coord 0 x) < min_x) then (aux r xs) --Se va por izquierda
+      else if (k == 1) && ((coord 1 x) > max_y) then (aux l xs) --Se va por arriba
+      else if (k == 1) && ((coord 1 x) < min_y) then (aux r xs) -- Se va por abajo
+      else (aux l (aux r xs))
+
                             
